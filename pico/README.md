@@ -108,7 +108,7 @@ Python 3.12, which the pinned Pillow needs) and [rustup](https://rustup.rs) (it 
 `pico/modules/camera/qr_reader` pins). Everything else is fetched at a fixed version:
 
 ```sh
-git clone -b feat/pico-on-dev https://github.com/habakan/seedsigner && cd seedsigner
+git clone https://github.com/habakan/seedsigner-pico && cd seedsigner-pico
 git submodule update --init pico/third_party/micropython-pil src/seedsigner/resources/seedsigner-translations
 uv venv -p 3.12 .venv && uv pip install -p .venv/bin/python -r requirements.txt
 uv pip install -p .venv/bin/python mpremote babel setuptools
