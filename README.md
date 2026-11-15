@@ -1,8 +1,10 @@
 # SeedSigner on the Raspberry Pi Pico 2
 
-SeedSigner's own Python, running on a $5 RP2350 with 520 KB of RAM instead of a Raspberry Pi Zero: the same
+SeedSigner's own Python, running on an RP2350 with 520 KB of RAM instead of a Raspberry Pi Zero: the same
 screens and flows, with the camera, a 240x240 screen, a joystick and three keys. Each signed PSBT is the
 same bytes upstream SeedSigner produces.
+
+https://github.com/user-attachments/assets/372af8fe-e810-4cb7-9dda-7da3a6c179f7
 
 This is an unofficial fork, not affiliated with the SeedSigner project and not a proposal to merge. For
 SeedSigner itself, go to [SeedSigner/seedsigner](https://github.com/SeedSigner/seedsigner) and
