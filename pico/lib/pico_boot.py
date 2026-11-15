@@ -55,6 +55,9 @@ SettingsDefinition.get_settings_entry(SettingsConstants.SETTING__LOCALE).selecti
 # The Pico runs from its flash and has no SD card to remove: no notice at boot, and no setting for one
 _sd = SettingsDefinition.get_settings_entry(SettingsConstants.SETTING__MICROSD_TOAST_TIMER)
 _sd.default_value, _sd.visibility = SettingsConstants.MICROSD_TOAST_TIMER_DISABLED, SettingsConstants.VISIBILITY__HIDDEN
+# The imports above already made Settings from the old defaults
+from seedsigner.models.settings import Settings
+Settings.get_instance()._data[_sd.attr_name] = _sd.default_value
 
 # A signed PSBT's UR, and a scanned one, without the 3-4 KB copies that a fragmented heap has no hole for
 from seedsigner.helpers.ur2.fountain_encoder import FountainEncoder
