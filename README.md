@@ -15,6 +15,7 @@ SeedSigner itself, go to [SeedSigner/seedsigner](https://github.com/SeedSigner/s
   [43980b4e…](https://mempool.space/signet/tx/43980b4e4e75da68c2f9181fea3864603cc0d145885d42072cfa7c5d3e403a1a)
 
 The rest of the tree is SeedSigner's, kept close to its `dev` branch so its changes can still be merged in.
+The port is the commits on top of it: [all of them in one diff](https://github.com/habakan/seedsigner-pico/compare/ada81cd...main).
 SeedSigner's own README is [upstream's](https://github.com/SeedSigner/seedsigner/blob/dev/README.md).
 
 MIT, as SeedSigner ([LICENSE.md](LICENSE.md)).
