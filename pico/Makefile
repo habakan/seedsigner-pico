@@ -9,6 +9,8 @@ OUT := ../build/pico
 # arm for the Cortex-M33 cores, which secure boot needs (build-RPI_PICO2), or riscv for the Hazard3 cores
 # (build-RPI_PICO2-RISCV); PICO_TOOLCHAIN_PATH is a GCC for that architecture
 ARCH ?= arm
+# The date MicroPython builds in, from the last commit, so a release builds to the same bytes on any day
+SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct)
 # UI languages frozen in besides English: by default those OpenSans covers. A CJK language brings a Noto font
 # of 0.6 to 0.7 MB, so it goes in on its own: make rp2 LOCALES=ja (or ko, zh_Hans_CN)
 LOCALES ?= ca cs de el es fr id it nl no pl pt_BR ru tr vi
@@ -82,10 +84,19 @@ rp2: py patch
 # The release build (pico/release): Arm only, no USB, boot.py and main.py frozen in; flashed in BOOTSEL mode
 rp2-release: py patch
 	@test -n "$(BITWASM_SIGNER)" || { echo "set BITWASM_SIGNER to a bitwasm-signer checkout at the pinned commit"; exit 1; }
-	BITWASM_SIGNER=$(abspath $(BITWASM_SIGNER)) WAMR_ROOT=$(abspath $(WAMR_ROOT)) \
+	BITWASM_SIGNER=$(abspath $(BITWASM_SIGNER)) WAMR_ROOT=$(abspath $(WAMR_ROOT)) SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	  CMAKE_ARGS=-DMICROPY_HW_FLASH_STORAGE_BYTES=1048576 $(MAKE) -C $(MPY_DIR)/ports/rp2 -j8 BOARD_DIR=$(abspath release/SEEDSIGNER_PICO2) \
 	  USER_C_MODULES=$(abspath modules/micropython.cmake) FROZEN_MANIFEST=$(abspath manifest_release.py)
 .PHONY: rp2-release
+
+# rp2-release signed with KEY, a secp256k1 key (.pem), into $(OUT)/firmware-signed.uf2. The signature is a block
+# added at the end, so the rest is rp2-release's own bytes; otp.json holds the key's hash secure boot would check
+RELEASE_ELF = $(MPY_DIR)/ports/rp2/build-SEEDSIGNER_PICO2/firmware.elf
+rp2-release-signed: rp2-release
+	@test -n "$(KEY)" || { echo "set KEY to the signing key (.pem)"; exit 1; }
+	picotool seal --sign --quiet $(RELEASE_ELF) $(OUT)/firmware-signed.elf $(KEY) $(OUT)/otp.json
+	picotool uf2 convert $(OUT)/firmware-signed.elf $(OUT)/firmware-signed.uf2
+.PHONY: rp2-release-signed
 
 # The one file the device's filesystem needs: everything else is frozen into the firmware. It starts
 # SeedSigner; `import selftest` at the REPL checks the seed and PSBT code instead
