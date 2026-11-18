@@ -6,6 +6,8 @@ MPY_DIR := ../build/micropython
 URTYPES ?= $(shell ../.venv/bin/python -c "import os, urtypes; print(os.path.dirname(urtypes.__file__))")
 WAMR_ROOT ?= $(BITWASM_SIGNER)/third_party/wasm-micro-runtime
 OUT := ../build/pico
+# riscv, or arm for the Cortex-M33 cores (a build of its own, build-RPI_PICO2); PICO_TOOLCHAIN_PATH is then an Arm GCC
+ARCH ?= riscv
 # UI languages frozen in besides English: by default those OpenSans covers. A CJK language brings a Noto font
 # of 0.6 to 0.7 MB, so it goes in on its own: make rp2 LOCALES=ja (or ko, zh_Hans_CN)
 LOCALES ?= ca cs de el es fr id it nl no pl pt_BR ru tr vi
@@ -72,7 +74,7 @@ patch:
 rp2: py patch
 	@test -n "$(BITWASM_SIGNER)" || { echo "set BITWASM_SIGNER to a bitwasm-signer checkout at the pinned commit"; exit 1; }
 	BITWASM_SIGNER=$(abspath $(BITWASM_SIGNER)) WAMR_ROOT=$(abspath $(WAMR_ROOT)) \
-	  CMAKE_ARGS=-DMICROPY_HW_FLASH_STORAGE_BYTES=1048576 $(MAKE) -C $(MPY_DIR)/ports/rp2 -j8 BOARD=RPI_PICO2 BOARD_VARIANT=RISCV \
+	  CMAKE_ARGS=-DMICROPY_HW_FLASH_STORAGE_BYTES=1048576 $(MAKE) -C $(MPY_DIR)/ports/rp2 -j8 BOARD=RPI_PICO2 $(if $(filter riscv,$(ARCH)),BOARD_VARIANT=RISCV) \
 	  USER_C_MODULES=$(abspath modules/micropython.cmake) FROZEN_MANIFEST=$(abspath manifest.py)
 .PHONY: rp2
 
