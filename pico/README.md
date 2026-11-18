@@ -160,6 +160,15 @@ checks the signature. The release builds to the same bytes from the same commit,
 signature is a block added at the end: a signed image is a build of its source, plus that block and the 4-byte
 link to it.
 
+The bytes are those of Linux x86_64 with Arm's Linux toolchain package (its macOS package has other builds of
+libc and libm). `pico/release/Dockerfile` is that environment; it builds a commit from a fresh clone into `out/`
+with its SHA-256:
+
+```sh
+docker build --platform linux/amd64 -t seedsigner-pico-release pico/release
+docker run --rm --platform linux/amd64 -v "$PWD/out:/out" seedsigner-pico-release <commit>
+```
+
 ## More
 
 `docs/pico.md` is the engineering record: each stage, what MicroPython needed, how the RAM was found,
