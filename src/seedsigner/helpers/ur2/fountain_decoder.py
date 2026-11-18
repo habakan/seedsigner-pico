@@ -6,7 +6,7 @@
 #
 import time
 from .fountain_utils import choose_fragments, contains, is_strict_subset, set_difference
-from .utils import join_lists, join_bytes, crc32_int, xor_with, take_first
+from .utils import join_lists, join_bytes, crc32_int, xor_into, take_first
 
 class InvalidPart(Exception):
     pass
@@ -22,7 +22,7 @@ class FountainDecoder:
         
         @classmethod
         def from_encoder_part(cls, p):
-            return cls(choose_fragments(p.seq_num, p.seq_len, p.checksum), p.data[:])
+            return cls(choose_fragments(p.seq_num, p.seq_len, p.checksum), bytearray(p.data))
 
         def indexes(self):
             return self.indexes
@@ -90,14 +90,10 @@ class FountainDecoder:
             return min(0.99, self.processed_parts_count / estimated_input_parts)
         else:
             parts = self.expected_part_count() if self.expected_part_indexes != None else 'None'
-            mixed = []
             mixed_index_scoring = {}
-            mixed_set = set()
             for indexes, p in self.mixed_parts.items():
                 if not indexes:
                     continue
-                mixed.append(self.indexes_to_string(indexes))
-                mixed_set.update(indexes)
                 score = 1.0 / float(len(indexes))
                 for index in indexes:
                     if index not in mixed_index_scoring:
@@ -198,11 +194,11 @@ class FountainDecoder:
     def reduce_part_by_part(self, a, b):
         # If the fragments mixed into `b` are a strict (proper) subset of those in `a`...
         if is_strict_subset(b.indexes, a.indexes):
-            # The new fragments in the revised part are `a` - `b`.
-            new_indexes = set_difference(a.indexes, b.indexes)
-            # The new data in the revised part are `a` XOR `b`
-            new_data = xor_with(bytearray(a.data), b.data)
-            return self.Part(new_indexes, new_data)
+            # `a` - `b` and `a` XOR `b`, in place: `a` is a mixed part of ours, and a copy for every
+            # reduction is what fragmented a microcontroller's heap until parts were dropped
+            a.indexes = frozenset(set_difference(a.indexes, b.indexes))
+            xor_into(a.data, b.data)
+            return a
         else:
             # `a` is not reducable by `b`, so return a
             return a
