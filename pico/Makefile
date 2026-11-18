@@ -6,8 +6,9 @@ MPY_DIR := ../build/micropython
 URTYPES ?= $(shell ../.venv/bin/python -c "import os, urtypes; print(os.path.dirname(urtypes.__file__))")
 WAMR_ROOT ?= $(BITWASM_SIGNER)/third_party/wasm-micro-runtime
 OUT := ../build/pico
-# riscv, or arm for the Cortex-M33 cores (a build of its own, build-RPI_PICO2); PICO_TOOLCHAIN_PATH is then an Arm GCC
-ARCH ?= riscv
+# arm for the Cortex-M33 cores, which secure boot needs (build-RPI_PICO2), or riscv for the Hazard3 cores
+# (build-RPI_PICO2-RISCV); PICO_TOOLCHAIN_PATH is a GCC for that architecture
+ARCH ?= arm
 # UI languages frozen in besides English: by default those OpenSans covers. A CJK language brings a Noto font
 # of 0.6 to 0.7 MB, so it goes in on its own: make rp2 LOCALES=ja (or ko, zh_Hans_CN)
 LOCALES ?= ca cs de el es fr id it nl no pl pt_BR ru tr vi

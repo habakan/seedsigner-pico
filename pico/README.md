@@ -37,7 +37,8 @@ Checked against other software, not only against itself:
 
 ## Measured
 
-RP2350 RISC-V at 150 MHz, MicroPython 1.29.
+RP2350 at 150 MHz, MicroPython 1.29, measured on the RISC-V cores. The Arm build, now the default, has the
+same heap and signs a PSBT about 25% faster (0.42 s against 0.56 s for the self-test's).
 
 | | |
 |---|---:|
@@ -95,13 +96,15 @@ already signed, an OP_RETURN over 80 bytes); they are marked in `tests/conftest.
 - One core runs SeedSigner's threads; the camera preview is grey.
 - No Hindi, Thai, Persian or Arabic (MicroPython has no text shaping), and one CJK language per build.
 - Addresses and message signing only on the standard paths; Electrum seeds only as single sig.
-- The heap is the risk: some screens have little to spare, and a scan that runs out of it stops
-  advancing. The development build logs what the UR decoder drops.
+- The heap is the risk: some screens have little to spare. A 25 KB PSBT scans from a looping animated QR,
+  but the UR decoder still drops a few parts on the way; the development build logs them.
 
 ## Build one
 
-The parts and the wiring are in [docs/pico.md](../docs/pico.md#hardware): a Pico 2 H, a 1.54" ST7789 screen,
-an OV7675 camera board, a 5-way joystick and three switches, on a breadboard.
+The firmware is set up for [pico-lcd-cam-carrier](https://github.com/habakan/pico-lcd-cam-carrier) Rev E: a
+Pico 2 H, Waveshare's 1.3inch LCD HAT and an OV7675 camera board (Arducam B0070) plugged into one board, no
+soldering when it is ordered with its connectors fitted. A breadboard build and its pins are in
+[docs/pico.md](../docs/pico.md#hardware).
 
 The firmware builds on macOS (arm64) or Linux (x86_64) with git, CMake, [uv](https://docs.astral.sh/uv/) (for
 Python 3.12, which the pinned Pillow needs) and [rustup](https://rustup.rs) (it installs the Rust that
@@ -122,17 +125,18 @@ make -C build/micropython/mpy-cross
 git clone https://github.com/bitwasm-project/bitwasm-signer ../bitwasm-signer
 (cd ../bitwasm-signer && git checkout --detach 91d2c5d && make deps wamr-deps)
 
-# Raspberry Pi's RISC-V GCC: riscv-toolchain-16 from pico-sdk-tools v2.3.1-0, unpacked to ../riscv-toolchain
-# https://github.com/raspberrypi/pico-sdk-tools/releases/tag/v2.3.1-0
-PICO_TOOLCHAIN_PATH=$PWD/../riscv-toolchain make -C build/micropython/ports/rp2 BOARD=RPI_PICO2 BOARD_VARIANT=RISCV submodules
-make -C pico rp2 BITWASM_SIGNER=$PWD/../bitwasm-signer PICO_TOOLCHAIN_PATH=$PWD/../riscv-toolchain
+# Arm GNU Toolchain 14.2.Rel1 (arm-none-eabi), unpacked to ../arm-toolchain
+# https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
+PICO_TOOLCHAIN_PATH=$PWD/../arm-toolchain make -C build/micropython/ports/rp2 BOARD=RPI_PICO2 submodules
+make -C pico rp2 BITWASM_SIGNER=$PWD/../bitwasm-signer PICO_TOOLCHAIN_PATH=$PWD/../arm-toolchain
+# or the RISC-V cores: ARCH=riscv with riscv-toolchain-16 from pico-sdk-tools v2.3.1-0
 ```
 
 Both paths have to be absolute. Keep the checkout's path short, too: MicroPython keeps each frozen module's
 output path as a name of at most 255 bytes, and a deep directory fails with `name too long`.
 
 To flash, hold BOOTSEL while plugging the Pico in and copy
-`build/micropython/ports/rp2/build-RPI_PICO2-RISCV/firmware.uf2` to the drive that appears. SeedSigner is
+`build/micropython/ports/rp2/build-RPI_PICO2/firmware.uf2` to the drive that appears. SeedSigner is
 frozen into the firmware; the filesystem needs only the `main.py` that starts it, written once:
 
 ```sh

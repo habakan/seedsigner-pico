@@ -70,7 +70,7 @@ WAMR's 160 KB pool peaks at 157 KB on that PSBT, so larger ones or UR assembly m
 
 ```sh
 git submodule update --init pico/third_party/micropython-pil   # the PIL and _gfx, once
-make -C pico rp2 BITWASM_SIGNER=<bitwasm-signer> PICO_TOOLCHAIN_PATH=<RISC-V GCC>   # then flash firmware.elf
+make -C pico rp2 BITWASM_SIGNER=<bitwasm-signer> PICO_TOOLCHAIN_PATH=<Arm GCC>   # ARCH=riscv: a RISC-V GCC
 make -C pico device-install PORT=/dev/cu.usbmodem...    # main.py, once
 make -C pico mpy && make -C pico device-smoke PORT=...  # or run a script with the modules mounted
 ```
