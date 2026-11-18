@@ -227,18 +227,19 @@ over SWD with a Debug Probe. `pico/modules/camera/board_pins.h` is the assignmen
 | GPIO | to | GPIO | to |
 |---|---|---|---|
 | GP0 | screen RES | GP16 | screen DC |
-| GP1 | KEY3 | GP17 | joystick left |
+| GP1 | KEY3 | GP17 | joystick down |
 | GP2-GP9 | camera D0-D7, in order: PIO reads them as one run | GP18 | screen SCL (SPI0 SCK) |
 | GP10 | camera PCLK | GP19 | screen SDA (SPI0 TX) |
-| GP11 | camera HREF | GP20 | joystick up |
+| GP11 | camera HREF | GP20 | joystick left |
 | GP12 | camera VSYNC | GP21 | camera XCLK |
-| GP13 | joystick right | GP22 | joystick down |
+| GP13 | joystick up | GP22 | joystick right |
 | GP14 | camera SIO-D (I2C1 SDA) | GP26 | joystick press |
 | GP15 | camera SIO-C (I2C1 SCL) | GP27 / GP28 | KEY1 / KEY2 |
 
-The directions are SeedSigner's, as the joystick sits here, turned 90 degrees on the board; one turned
-another way is matched by swapping its pins in `pico/lib/RPi/GPIO.py`, not by rewiring. The screen is
-mounted upside down (`LCD_FLIP`).
+The directions and the screen's turn (`LCD_ROTATION 90`) are those of Waveshare's 1.3inch LCD HAT on
+[pico-lcd-cam-carrier](https://github.com/habakan/pico-lcd-cam-carrier) Rev E, held with the joystick on the
+left. The parts above on a breadboard need their own: swap the joystick's pins in `pico/lib/RPi/GPIO.py`, and
+set `LCD_ROTATION` to how the panel sits (180 for one mounted upside down).
 
 ## The camera
 
