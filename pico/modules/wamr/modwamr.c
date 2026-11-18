@@ -9,7 +9,7 @@
 #ifndef WAMR_POOL_KB
 #define WAMR_POOL_KB 110 /* parser-no-ur.wasm peaks at 106 KB with plan version 4, its buffers being fixed; the camera fits too */
 #endif
-static char pool[WAMR_POOL_KB * 1024];
+static char pool[WAMR_POOL_KB * 1024] __attribute__((aligned(8))); /* the camera DMAs whole words into it */
 /* The classic interpreter rewrites the module's bytes and keeps pointers into them: a static copy, as one
  * instance lives at a time, where 8 KB from the fragmented heap may not be found (parser-no-ur.wasm) */
 static uint8_t module_copy[9 * 1024];
