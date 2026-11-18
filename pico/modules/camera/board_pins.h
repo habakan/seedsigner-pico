@@ -11,6 +11,7 @@
 #define PIN_CAM_VSYNC 12
 #define PIN_CAM_SIOD 14 /* I2C1 SDA */
 #define PIN_CAM_SIOC 15 /* I2C1 SCL */
+#define CAM_TURN_180 1 /* the camera upside down on the Rev E carrier */
 #define PIN_CAM_XCLK 21 /* CLOCK GPOUT0; unused on an OV2640 board that has its own crystal */
 
 #define PIN_LCD_DC 16

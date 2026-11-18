@@ -1,4 +1,9 @@
 #include "camera.h"
+#include "board_pins.h"
+
+#ifndef CAM_TURN_180
+#define CAM_TURN_180 0
+#endif
 
 /* OV7670 and OV7675, both at SCCB 0x21 with compatible registers: left to emit VGA YUV422 as is.
  * The decimation to QVGA happens in PIO, because the OV7675's vertical scaler had no effect and kept
@@ -11,6 +16,7 @@ static const camera_reg_t regs[] = {
     {0x3a, 0x04},               /* TSLB: with COM13[0], gives the order Y U Y V */
     {0x3d, 0x88},               /* COM13: gamma on, UV automatic, order bit 0 */
     {0x40, 0xc0},               /* COM15: output range 00 to FF */
+    {0x1e, CAM_TURN_180 ? 0x31 : 0x01}, /* MVFP: mirror and flip turn the image; bit 0 is the reset value */
     {0xff, 0xff},
 };
 
