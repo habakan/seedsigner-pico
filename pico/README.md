@@ -146,6 +146,12 @@ PATH=$PWD/.venv/bin:$PATH make -C pico device-install PORT=/dev/cu.usbmodem...  
 After a reset the screen shows SeedSigner's main menu. If it stays blank, `mpremote connect <port> repl` and
 `import selftest` check the seed and PSBT code without the screen.
 
+`make -C pico rp2-release` (same arguments) builds the firmware with no USB at all: `boot.py` and `main.py`
+are frozen in (`pico/release`), so there is no REPL, raw REPL or file copy to run other code beside SeedSigner,
+and the Pico shows up on a computer only in BOOTSEL mode. It is the first step towards secure boot. Its output is
+`build/micropython/ports/rp2/build-SEEDSIGNER_PICO2/firmware.uf2`; to go back, flash the development build in
+BOOTSEL mode.
+
 ## More
 
 `docs/pico.md` is the engineering record: each stage, what MicroPython needed, how the RAM was found,

@@ -79,6 +79,14 @@ rp2: py patch
 	  USER_C_MODULES=$(abspath modules/micropython.cmake) FROZEN_MANIFEST=$(abspath manifest.py)
 .PHONY: rp2
 
+# The release build (pico/release): Arm only, no USB, boot.py and main.py frozen in; flashed in BOOTSEL mode
+rp2-release: py patch
+	@test -n "$(BITWASM_SIGNER)" || { echo "set BITWASM_SIGNER to a bitwasm-signer checkout at the pinned commit"; exit 1; }
+	BITWASM_SIGNER=$(abspath $(BITWASM_SIGNER)) WAMR_ROOT=$(abspath $(WAMR_ROOT)) \
+	  CMAKE_ARGS=-DMICROPY_HW_FLASH_STORAGE_BYTES=1048576 $(MAKE) -C $(MPY_DIR)/ports/rp2 -j8 BOARD_DIR=$(abspath release/SEEDSIGNER_PICO2) \
+	  USER_C_MODULES=$(abspath modules/micropython.cmake) FROZEN_MANIFEST=$(abspath manifest_release.py)
+.PHONY: rp2-release
+
 # The one file the device's filesystem needs: everything else is frozen into the firmware. It starts
 # SeedSigner; `import selftest` at the REPL checks the seed and PSBT code instead
 device-install:
