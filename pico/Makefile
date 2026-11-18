@@ -53,7 +53,7 @@ py:
 	../.venv/bin/python tools/make_fonts.py $(OUT)/py/pil_fonts ../src/seedsigner/resources/fonts fonts_used.json $(LOCALES)
 	../.venv/bin/python $(PIL_DIR)/tools/make_images.py $(OUT)/py/pil_images ../src/seedsigner/resources/img > /dev/null
 	../.venv/bin/python tools/make_l10n.py $(OUT)/py/pico_l10n ../src/seedsigner/resources/seedsigner-translations/l10n $(LOCALES) > /dev/null
-	printf 'NAME = "%s"\nFORK = "%s"\nSHORT_COMMIT_HASH = "%s"\n' "$$(git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)" \
+	printf 'NAME = "%s"\nFORK = "%s"\nSHORT_COMMIT_HASH = "%s"\n' "$$(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)" \
 	  "$$(git remote get-url origin | sed -E 's|.*[:/]([^/]+)/[^/]+$$|\1|')" "$$(git rev-parse --short HEAD)" > $(OUT)/py/pico_version.py
 	python3 -c "import sys; print('PARSER = ' + repr(open(sys.argv[1], 'rb').read()))" \
 	  ../src/seedsigner/resources/bitwasm/parser-no-ur.wasm > $(OUT)/py/bitwasm_modules.py
