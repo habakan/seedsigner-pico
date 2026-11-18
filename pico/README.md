@@ -148,7 +148,8 @@ After a reset the screen shows SeedSigner's main menu. If it stays blank, `mprem
 
 `make -C pico rp2-release` (same arguments) builds the firmware with no USB at all: `boot.py` and `main.py`
 are frozen in (`pico/release`), so there is no REPL, raw REPL or file copy to run other code beside SeedSigner,
-and the Pico shows up on a computer only in BOOTSEL mode. It is the first step towards secure boot. Its output is
+and the Pico shows up on a computer only in BOOTSEL mode. It mounts no filesystem either, so settings go back
+to their defaults at every boot, as upstream's do without an SD card. It is the first step towards secure boot. Its output is
 `build/micropython/ports/rp2/build-SEEDSIGNER_PICO2/firmware.uf2`; to go back, flash the development build in
 BOOTSEL mode.
 
