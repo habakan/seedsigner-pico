@@ -14,6 +14,13 @@ else()
   set(QR_READER_FLAGS "-C target-cpu=cortex-m33 -C relocation-model=static")
 endif()
 set(QR_READER_LIB ${CMAKE_BINARY_DIR}/qr_reader/${QR_READER_TARGET}/release/libqr_reader.a)
+# Panic messages name source files: cargo's own directory differs by machine and user, so it is renamed
+if(DEFINED ENV{CARGO_HOME})
+  set(QR_READER_CARGO_HOME $ENV{CARGO_HOME})
+else()
+  set(QR_READER_CARGO_HOME $ENV{HOME}/.cargo)
+endif()
+string(APPEND QR_READER_FLAGS " --remap-path-prefix=${QR_READER_CARGO_HOME}=/cargo --remap-path-prefix=${CAMERA_DIR}=/camera")
 add_custom_target(qr_reader_lib
   COMMAND ${CMAKE_COMMAND} -E env "RUSTFLAGS=${QR_READER_FLAGS}"
     cargo build --release --locked --target ${QR_READER_TARGET} --target-dir ${CMAKE_BINARY_DIR}/qr_reader

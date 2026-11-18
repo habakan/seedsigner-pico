@@ -1,0 +1,16 @@
+diff --git a/tools/manifestfile.py b/tools/manifestfile.py
+index 2e2ade6..a65e761 100644
+--- a/tools/manifestfile.py
++++ b/tools/manifestfile.py
+@@ -314,8 +314,9 @@ class ManifestFile:
+                 os.chdir(self._resolve_path(base_path))
+ 
+             # Find all candidate files.
+-            for dirpath, _, filenames in os.walk(package_path or ".", followlinks=True):
+-                for file in filenames:
++            for dirpath, dirnames, filenames in os.walk(package_path or ".", followlinks=True):
++                dirnames.sort()  # os.walk's order is the filesystem's: sorted, a build is the same bytes anywhere
++                for file in sorted(filenames):
+                     file = os.path.relpath(os.path.join(dirpath, file), ".")
+                     _, ext = os.path.splitext(file)
+                     if ext.lower() in exts:

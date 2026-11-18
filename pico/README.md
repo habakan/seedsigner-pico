@@ -114,7 +114,7 @@ Python 3.12, which the pinned Pillow needs) and [rustup](https://rustup.rs) (it 
 git clone https://github.com/habakan/seedsigner-pico && cd seedsigner-pico
 git submodule update --init pico/third_party/micropython-pil src/seedsigner/resources/seedsigner-translations
 uv venv -p 3.12 .venv && uv pip install -p .venv/bin/python -r requirements.txt
-uv pip install -p .venv/bin/python mpremote babel setuptools
+uv pip install -p .venv/bin/python mpremote babel==2.16.0 setuptools   # Babel's version shows in the .mo files
 .venv/bin/python setup.py compile_catalog    # the translations' .mo files, which the build freezes in
 
 # MicroPython 1.29.0, which the patches in pico/patches apply to
