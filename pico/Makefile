@@ -92,9 +92,13 @@ rp2-release: py patch
 # rp2-release signed with KEY, a secp256k1 key (.pem), into $(OUT)/firmware-signed.uf2. The signature is a block
 # added at the end, so the rest is rp2-release's own bytes; otp.json holds the key's hash secure boot would check
 RELEASE_ELF = $(MPY_DIR)/ports/rp2/build-SEEDSIGNER_PICO2/firmware.elf
+# A secured chip refuses a lower ROLLBACK than it has booted, counted in OTP's DEFAULT_BOOT_VERSION0/1 (0 to 47);
+# --clear has the bootrom zero all of SRAM, stacks included, where the runtime zeroes only .bss (and the heap in it)
+ROLLBACK ?= 1
 rp2-release-signed: rp2-release
 	@test -n "$(KEY)" || { echo "set KEY to the signing key (.pem)"; exit 1; }
-	picotool seal --sign --quiet $(RELEASE_ELF) $(OUT)/firmware-signed.elf $(KEY) $(OUT)/otp.json
+	picotool seal --quiet --sign --clear $(RELEASE_ELF) $(OUT)/firmware-signed.elf $(KEY) $(OUT)/otp.json \
+	  --rollback $(ROLLBACK) 0x4e 0x51
 	picotool uf2 convert $(OUT)/firmware-signed.elf $(OUT)/firmware-signed.uf2
 .PHONY: rp2-release-signed
 
