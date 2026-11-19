@@ -16,7 +16,7 @@ RUN curl -fsSLo /tmp/arm.tar.xz https://developer.arm.com/-/media/Files/download
     && mkdir -p /opt/arm-toolchain && tar xJf /tmp/arm.tar.xz -C /opt/arm-toolchain --strip-components=1 \
     && rm /tmp/arm.tar.xz
 
-COPY --from=ghcr.io/astral-sh/uv:0.6.17 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.6.17@sha256:4a6c9444b126bd325fba904bff796bf91fb777bf6148d60109c4cb1de2ffc497 /uv /usr/local/bin/uv
 # rustup only: qr_reader's rust-toolchain.toml pins the Rust it builds with
 RUN curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
 ENV PATH=/root/.cargo/bin:$PATH
