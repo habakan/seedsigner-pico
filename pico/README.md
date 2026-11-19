@@ -165,7 +165,7 @@ at the end: a signed image is a build of its source, plus that block and the 4-b
 
 The bytes are those of Linux x86_64 with Arm's Linux toolchain package (its macOS package has other builds of
 libc and libm). `pico/release/Dockerfile` is that environment; it builds a commit from a fresh clone into `out/`
-with its SHA-256:
+with its SHA-256, and `THIRD-PARTY-NOTICES.txt`, the licenses of everything built into it:
 
 ```sh
 docker build --platform linux/amd64 -t seedsigner-pico-release pico/release

@@ -21,4 +21,5 @@ make -s -C build/micropython/ports/rp2 BOARD=RPI_PICO2 submodules > /dev/null
 make -C pico rp2-release BITWASM_SIGNER=$PWD/../bitwasm-signer > /out/build.log 2>&1
 B=build/micropython/ports/rp2/build-SEEDSIGNER_PICO2
 cp $B/firmware.bin $B/firmware.elf $B/firmware.uf2 /out/
+.venv/bin/python pico/release/notices.py build/micropython ../bitwasm-signer > /out/THIRD-PARTY-NOTICES.txt
 cd /out && sha256sum firmware.bin firmware.uf2 | tee SHA256SUMS
