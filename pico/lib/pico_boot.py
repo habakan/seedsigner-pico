@@ -566,3 +566,48 @@ def _wiping_final_image(self):
 
 
 ToolsImageEntropyMnemonicLengthView.run = _wiping_final_image
+
+
+from seedsigner.models.seed_storage import SeedStorage
+
+
+def _scrub_heap():
+    # MicroPython frees without clearing, and a reset clears nothing: a discarded seed's words stayed in the heap
+    # until reused. Taking every free block once zeroes them (gc_alloc clears what it hands out), 0.3 s
+    import gc
+    gc.collect()
+    held, n = [], 16384
+    while n:
+        try:
+            held.append(bytearray(n))
+        except MemoryError:
+            n //= 2
+    del held
+    gc.collect()
+
+
+def _emptied(seed):
+    # The view that discards a seed still holds it: its words go first, or they are not free to be zeroed
+    if seed is not None:
+        seed._mnemonic, seed._passphrase = [], ""
+    _scrub_heap()
+
+
+_discard_seed = controller.Controller.discard_seed
+_clear_pending_seed = SeedStorage.clear_pending_seed
+
+
+def _discarding(self, seed):
+    _discard_seed(self, seed)
+    _emptied(seed)
+
+
+def _clearing_pending(self):
+    seed = self.pending_seed
+    _clear_pending_seed(self)
+    _emptied(seed)
+
+
+controller.Controller.discard_seed = _discarding
+SeedStorage.clear_pending_seed = _clearing_pending
+_scrub_heap()  # what the firmware ran before its last reset
