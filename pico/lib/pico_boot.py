@@ -594,7 +594,7 @@ from seedsigner.models.seed_storage import SeedStorage
 
 
 def _scrub_heap():
-    # MicroPython frees without clearing, and a reset clears nothing: a discarded seed's words stayed in the heap
+    # MicroPython frees without clearing, nor does a soft reset: a discarded seed's words stayed in the heap
     # until reused. Taking every free block once zeroes them (gc_alloc clears what it hands out), 0.3 s
     import gc
     gc.collect()
@@ -632,4 +632,4 @@ def _clearing_pending(self):
 
 controller.Controller.discard_seed = _discarding
 SeedStorage.clear_pending_seed = _clearing_pending
-_scrub_heap()  # what the firmware ran before its last reset
+_scrub_heap()  # what ran before a soft reset
