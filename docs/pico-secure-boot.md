@@ -57,6 +57,8 @@ A secured Pico still enters BOOTSEL mode and takes any UF2, but boots only a cor
    - Optionally, `"disable_bootsel_usb_picoboot_ifc": 1` in `boot_flags0` stops picotool, and with it anyone
      else, from writing more OTP bits (a stray `KEY_INVALID` bit for slot 0 would brick the board). Updates still
      work by copying a UF2 to the BOOTSEL drive.
+   - Locking OTP page 2, which holds the key hashes, does the same for those rows alone (datasheet section 13.5,
+     "Page locks"). Never lock page 1: the board counts its rollback version there (rows 0x04e to 0x053).
 7. **Write OTP**, with the board in BOOTSEL mode: `picotool otp load otp.json`. Then flash the signed UF2 again
    and check that it boots.
 
