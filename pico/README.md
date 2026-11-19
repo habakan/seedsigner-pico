@@ -123,7 +123,7 @@ make -C build/micropython/mpy-cross
 
 # bitwasm-signer at the commit this build links, with secp256k1 and WAMR 2.4.5
 git clone https://github.com/bitwasm-project/bitwasm-signer ../bitwasm-signer
-(cd ../bitwasm-signer && git checkout --detach 91d2c5d && make deps wamr-deps)
+(cd ../bitwasm-signer && git checkout --detach 5cd14a1 && make deps wamr-deps)
 
 # Arm GNU Toolchain 14.2.Rel1 (arm-none-eabi), unpacked to ../arm-toolchain
 # https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads

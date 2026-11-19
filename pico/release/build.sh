@@ -15,7 +15,7 @@ test "$(git -C build/micropython rev-parse HEAD)" = 0fd6c573ea815774668bbb16b8e1
 make -s -C build/micropython/mpy-cross
 # bitwasm-signer at the commit pico/README.md pins
 git clone -q https://github.com/bitwasm-project/bitwasm-signer ../bitwasm-signer
-(cd ../bitwasm-signer && git checkout -q --detach 91d2c5d44297113050b5bbb9b2833d497bd5a5ac && make deps wamr-deps > /dev/null)
+(cd ../bitwasm-signer && git checkout -q --detach 5cd14a1e166045a037c5585f5f24b813c6695e48 && make deps wamr-deps > /dev/null)
 export PICO_TOOLCHAIN_PATH=/opt/arm-toolchain
 make -s -C build/micropython/ports/rp2 BOARD=RPI_PICO2 submodules > /dev/null
 make -C pico rp2-release BITWASM_SIGNER=$PWD/../bitwasm-signer > /out/build.log 2>&1
