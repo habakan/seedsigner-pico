@@ -655,8 +655,18 @@ def _clearing_pending(self):
     _emptied(seed)
 
 
+_discard_pending_mnemonic = SeedStorage.discard_pending_mnemonic
+
+
+def _discarding_pending_mnemonic(self):
+    # The words typed so far, when entry is cancelled
+    _discard_pending_mnemonic(self)
+    _scrub_heap()
+
+
 controller.Controller.discard_seed = _discarding
 SeedStorage.clear_pending_seed = _clearing_pending
+SeedStorage.discard_pending_mnemonic = _discarding_pending_mnemonic
 
 _scan_run = ScanScreen._run
 
@@ -701,6 +711,8 @@ def _handling(self, e):
     if isinstance(e, MemoryError):
         self.psbt = self.psbt_bytes = self.psbt_parser = None
         gc.collect()
+    # Whatever the view was doing with the camera, it would keep WAMR's pool and the last frame
+    Camera.get_instance().release()
     return _handle_exception(self, e)
 
 

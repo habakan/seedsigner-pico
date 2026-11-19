@@ -2,6 +2,7 @@
 read_video_stream() is the code's bytes, or NO_CODE, which DecodeQR takes as they are (pico/lib/pico_boot.py)."""
 import _camera
 import hashlib
+import os
 from PIL import Image
 
 
@@ -26,7 +27,10 @@ class _Frame(Image.Image):
     def __init__(self):
         # Image's own lists shared, never added to: a frame is only pasted, which copies them
         self.mode, self.size, self.ops, self.boxes, self.dirty = "RGB", (240, 240), _CAM_OPS, _CAM_BOXES, None
-        self._digest = hashlib.sha256(_camera.frame()).digest()
+        # The RP2350's TRNG mixed in too: a dark or stuck sensor still leaves the words unpredictable
+        h = hashlib.sha256(os.urandom(32))
+        h.update(_camera.frame())
+        self._digest = h.digest()
         self._range = _camera.stats()[:2]
 
     def tobytes(self, *args):

@@ -743,16 +743,20 @@ class PSBTOpReturnScreen(ButtonListScreen):
         super().__post_init__()
 
         try:
-            # Simple case: display human-readable text
+            # Simple case: display human-readable text. Printable ASCII only, as a font can draw nothing for other
+            # characters (the Pico's hold no more); positional arguments, as MicroPython takes no keywords here
+            text = self.op_return_data.decode("utf-8", "strict")
+            if any(not " " <= c <= "~" for c in text):
+                raise UnicodeError
             self.components.append(TextArea(
-                text=self.op_return_data.decode(errors="strict"),  # "strict" is a good enough heuristic to decide if it's human readable
+                text=text,
                 font_size=GUIConstants.get_top_nav_title_font_size(),
                 is_text_centered=True,
                 screen_y=self.top_nav.height + GUIConstants.COMPONENT_PADDING,
                 height=self.buttons[0].screen_y - self.top_nav.height - 2*GUIConstants.COMPONENT_PADDING,
             ))
             return
-        except UnicodeDecodeError:
+        except UnicodeError:  # MicroPython has no UnicodeDecodeError
             # Contains data that can't be converted to UTF-8; probably encoded and not
             # meant to be human readable.
             font = Fonts.get_font(GUIConstants.FIXED_WIDTH_FONT_NAME, size=GUIConstants.get_body_font_size())

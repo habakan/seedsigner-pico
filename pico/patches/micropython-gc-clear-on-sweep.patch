@@ -1,0 +1,14 @@
+diff --git a/py/gc.c b/py/gc.c
+index a75d26e..ffcf638 100644
+--- a/py/gc.c
++++ b/py/gc.c
+@@ -51,7 +51,8 @@
+ 
+ // make this 1 to zero out swept memory to more eagerly
+ // detect untraced object still in use
+-#define CLEAR_ON_SWEEP (0)
++// SeedSigner Pico: 1, so a seed's words are gone from the heap once collected, not when the block is reused
++#define CLEAR_ON_SWEEP (1)
+ 
+ #define WORDS_PER_BLOCK ((MICROPY_BYTES_PER_GC_BLOCK) / MP_BYTES_PER_OBJ_WORD)
+ #define BYTES_PER_BLOCK (MICROPY_BYTES_PER_GC_BLOCK)

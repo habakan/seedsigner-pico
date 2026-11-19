@@ -166,6 +166,9 @@ class WasmPSBTParser:
             at = P.PLAN_OUTPUTS + i * P.PLAN_OUTPUT_SIZE
             if out["text_kind"] == P.TEXT_KIND_OP_RETURN:
                 spk = plan[at + P.PLAN_OUT_SPK + 1:at + P.PLAN_OUT_SPK + 1 + plan[at + P.PLAN_OUT_SPK]]
+                # The screens show one OP_RETURN's data and no OP_RETURN's amount: a second, or sats burnt, go unseen
+                if self.op_return_data is not None or out["amount"]:
+                    raise PSBTBitwasmRefusedError("an OP_RETURN that burns sats, or more than one")
                 self.op_return_data = _op_return(spk)
                 self.op_return_amount += out["amount"]
                 continue

@@ -222,3 +222,18 @@ def test_electrum_seed_as_electrum_derives_it():
     assert wallet.address(seed, "m/0h", net, True, 0) == "bc1qdy94n2q5qcp0kg7v9yzwe6wvfkhnvyzje7nx2p"
     with pytest.raises(wallet.UnsupportedDerivation):
         wallet.account_xpub(seed, "m/84h/0h/0h", net)
+
+
+@pytest.mark.parametrize("op_returns", [[(b"burn", 50_000)], [(b"one", 0), (b"two", 0)], [(b"text", 0), (b"", 0)]])
+def test_op_returns_the_screens_cannot_show_are_refused(op_returns):
+    # The screens show one OP_RETURN's data and none's amount, so sats burnt or a second OP_RETURN would go unseen
+    from psbt_testing_util import create_op_return_output, create_op_return_psbt
+    psbt = create_op_return_psbt([create_op_return_output(data, value) for data, value in op_returns])
+    with pytest.raises(PSBTBitwasmRefusedError):
+        WasmPSBTParser(psbt.serialize(), seed=PSBTTestData.seed, network=SettingsConstants.REGTEST)
+
+
+def test_one_op_return_without_sats_still_parses():
+    from psbt_testing_util import create_op_return_output, create_op_return_psbt
+    psbt = create_op_return_psbt([create_op_return_output(b"hello")])
+    assert WasmPSBTParser(psbt.serialize(), seed=PSBTTestData.seed, network=SettingsConstants.REGTEST).op_return_data == b"hello"
