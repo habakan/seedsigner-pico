@@ -155,12 +155,13 @@ BOOTSEL mode.
 
 `make -C pico rp2-release-signed KEY=<secp256k1 .pem>` signs it with `picotool seal` into
 `build/pico/firmware-signed.uf2`, and writes the key's hash to `build/pico/otp.json`. A Pico whose OTP is blank
-runs it like any other; only one with that hash and secure boot burnt into its OTP, which cannot be undone,
-checks the signature. Such a Pico also refuses an image whose rollback version (`ROLLBACK`, 1 by default) is lower than
-the highest it has booted, which it counts in OTP by itself, and every signed image has the bootrom clear all of SRAM
-before it starts. The release builds to the same bytes from the same commit, dated by it, and the
-signature is a block added at the end: a signed image is a build of its source, plus that block and the 4-byte
-link to it.
+runs it like any other; only one with that hash and secure boot burnt into its OTP checks the signature. That
+cannot be undone, and such a Pico runs nothing that key has not signed, so read
+[docs/pico-secure-boot.md](../docs/pico-secure-boot.md) first: for development or your own updates, don't burn it.
+A secured Pico also refuses an image whose rollback version (`ROLLBACK`, 1 by default) is lower than the highest it
+has booted, which it counts in OTP by itself, and every signed image has the bootrom clear all of SRAM before it
+starts. The release builds to the same bytes from the same commit, dated by it, and the signature is a block added
+at the end: a signed image is a build of its source, plus that block and the 4-byte link to it.
 
 The bytes are those of Linux x86_64 with Arm's Linux toolchain package (its macOS package has other builds of
 libc and libm). `pico/release/Dockerfile` is that environment; it builds a commit from a fresh clone into `out/`
