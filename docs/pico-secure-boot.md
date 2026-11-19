@@ -36,35 +36,55 @@ A secured Pico still enters BOOTSEL mode and takes any UF2, but boots only a cor
    bypass secure boot, in Raspberry Pi's 2024 hacking challenge and since; A4 fixes most of what was published
    by mid-2025. On an A2 board, secure boot still stops someone swapping the firmware in a few minutes with a USB
    cable, but not someone with the board, time and glitching equipment.
-3. **Choose whose key.** Writing a release's `otp.json` ties the board to whoever signed that release. Writing
-   your own key's hash means you build and sign every update yourself.
+3. **Use your own key.** Releases ship no OTP values. Rebuild the release with `pico/release/Dockerfile` and sign
+   its `out/firmware.elf` with your key, as `make -C pico rp2-release-signed` does; you then sign every update you
+   install yourself.
 4. **Check what you install.** The release builds to the same bytes from the same commit:
    `pico/release/Dockerfile` builds it from a fresh clone, and a signed image is that build plus a block at the
-   end and a 4-byte link to it (`pico/README.md`, "Build one").
+   end and links to it (`pico/README.md`, "Build one").
 5. **Flash the signed UF2 before writing OTP**, and use it: a board with blank OTP runs it like any other build.
-6. **Complete `otp.json`.** `picotool seal` writes only the key's hash, `KEY_VALID` for it and
-   `SECURE_BOOT_ENABLE`. Add, at least:
-   ```json
-   "boot_flags1": {"key_valid": 1, "key_invalid": 14},
-   "boot_flags0": {"disable_bootsel_uart_boot": 1},
-   "crit1": {"secure_boot_enable": 1, "debug_disable": 1, "glitch_detector_enable": 1}
-   ```
-   - `key_invalid` 14 marks key slots 1 to 3 invalid. Without it, anyone with the board in BOOTSEL mode can
-     write a key of their own into a free slot, and the board then runs their firmware.
-   - `debug_disable` closes SWD, which could otherwise halt the chip and read the seed from RAM, or run unsigned
-     code until the next reset. Leave it out only if you accept that.
-   - The glitch detector resets the chip on an abnormal supply or clock, and UART boot is unused.
-   - Optionally, `"disable_bootsel_usb_picoboot_ifc": 1` in `boot_flags0` stops picotool, and with it anyone
-     else, from writing more OTP bits (a stray `KEY_INVALID` bit for slot 0 would brick the board). Updates still
-     work by copying a UF2 to the BOOTSEL drive.
-   - Locking OTP page 2, which holds the key hashes, does the same for those rows alone (datasheet section 13.5,
-     "Page locks"). Never lock page 1: the board counts its rollback version there (rows 0x04e to 0x053).
-7. **Write OTP**, with the board in BOOTSEL mode: `picotool otp load otp.json`. Then flash the signed UF2 again
-   and check that it boots.
+6. **Check the key's hash.** `picotool seal` writes it to `otp.json` as `bootkey0`. Compare it with the public
+   key that `picotool info -a firmware-signed.uf2` shows (`echo -n <public key> | xxd -r -p | shasum -a 256`), and
+   with your key's own (`openssl ec -in key.pem -pubout -conv_form uncompressed -outform DER | tail -c 64 |
+   shasum -a 256`). A wrong hash leaves a secured board unable to boot anything.
+7. **Write OTP in two stages**, with the board in BOOTSEL mode. Field by field rather than `picotool otp load`
+   with a hand-edited `otp.json`, so that a misspelt name fails before it writes; `picotool otp get` reads each
+   one back, and picotool writes every redundant copy of a row itself.
 
-This project has not yet secured a board itself; the steps above follow Raspberry Pi's RP2350 datasheet
-(sections 5.10.1, "Secure boot", and 10.5, "Secure boot enable procedure") and picotool, and will be updated
-when it has.
+   First what does not secure the board yet, so that a mistake here still leaves it booting:
+   ```sh
+   python3 -c "import json; json.dump({'bootkey0': json.load(open('otp.json'))['bootkey0']}, open('key.json', 'w'))"
+   picotool otp load key.json                               # the key's hash, into slot 0
+   picotool otp set OTP_DATA_BOOT_FLAGS1.KEY_VALID 1        # slot 0
+   picotool otp set OTP_DATA_BOOT_FLAGS1.KEY_INVALID 0xe    # slots 1 to 3, so that no key can be added later
+   picotool otp set OTP_DATA_BOOT_FLAGS0.DISABLE_BOOTSEL_UART_BOOT 1
+   picotool otp set OTP_DATA_BOOT_FLAGS0.DISABLE_OTP_BOOT 1
+   picotool otp set OTP_DATA_BOOT_FLAGS0.DISABLE_SRAM_WINDOW_BOOT 1
+   picotool otp set OTP_DATA_CRIT1.GLITCH_DETECTOR_ENABLE 1
+   picotool otp get -z BOOTKEY0                             # the hash, two bytes a row, little-endian
+   ```
+   Boot the signed UF2 once like this (`picotool reboot`), and check the screen stays on the main menu: the
+   glitch detector resets the chip on an abnormal supply or clock, and should not on yours.
+
+   Then, in BOOTSEL mode again, what cannot be undone:
+   ```sh
+   picotool otp set OTP_DATA_CRIT1.DEBUG_DISABLE 1          # SWD closed: it could read the seed from RAM
+   picotool otp set OTP_DATA_CRIT1.SECURE_DEBUG_DISABLE 1
+   picotool otp set OTP_DATA_CRIT1.SECURE_BOOT_ENABLE 1     # also turns the RISC-V cores off for good
+   ```
+8. **Check it.** `picotool info -d` says `secure boot: 1` and `debug enable: 0`. The signed UF2 boots; the
+   unsigned `firmware.uf2` does not, and the board comes back in BOOTSEL mode (flash the signed one again). After
+   the first signed boot, `picotool otp get -r 0x4e` reads 1, the rollback version.
+9. **Last, optionally, close picotool's interface**:
+   `picotool otp set OTP_DATA_BOOT_FLAGS0.DISABLE_BOOTSEL_USB_PICOBOOT_IFC 1`. From the next BOOTSEL entry no one
+   can write more OTP bits over USB (a stray `KEY_INVALID` bit for slot 0 would brick the board) or read memory;
+   updates still work by copying a UF2 to the BOOTSEL drive, and picotool no longer sees the board at all.
+
+Never lock OTP page 1 (datasheet section 13.5, "Page locks"): the board counts its rollback version there, rows
+0x04e to 0x053.
+
+These steps were done in this order on one board, an RP2350 A2, on 2026-11-19, following Raspberry Pi's RP2350
+datasheet (sections 5.10.1, "Secure boot", and 10.5, "Secure boot enable procedure").
 
 ## Updates afterwards
 
