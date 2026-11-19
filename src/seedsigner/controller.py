@@ -7,6 +7,7 @@ import traceback
 from PIL.Image import Image
 
 from seedsigner.gui.toast import BaseToastOverlayManagerThread
+from seedsigner.helpers import bitwasm
 from seedsigner.models.psbt import PSBTParser
 from seedsigner.models.seed import Seed
 from seedsigner.models.seed_storage import SeedStorage
@@ -222,6 +223,7 @@ class Controller(Singleton):
 
     def discard_seed(self, seed: Seed):
         self.storage.seeds.remove(seed)
+        bitwasm.forget(seed)  # signer.wasm keeps the last key it derived until told otherwise
 
 
     def pop_prev_from_back_stack(self):

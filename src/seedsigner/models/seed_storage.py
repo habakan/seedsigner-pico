@@ -1,4 +1,5 @@
 from typing import List
+from seedsigner.helpers import bitwasm
 from seedsigner.models.seed import Seed, ElectrumSeed, InvalidSeedException
 from seedsigner.models.settings_definition import SettingsConstants
 
@@ -30,6 +31,8 @@ class SeedStorage:
 
 
     def clear_pending_seed(self):
+        if self.pending_seed is not None:
+            bitwasm.forget(self.pending_seed)
         self.pending_seed = None
 
 
