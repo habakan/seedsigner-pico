@@ -101,3 +101,16 @@ def test_another_wallet_does_not_prove_the_change():
     p = WasmPSBTParser(change_psbt(), PSBTTestData.seed, NET)
     other = DESC.replace("sortedmulti(2,", "sortedmulti(1,").split("#")[0]
     assert not p.verify_multisig_output(registered(other), change_num=0)
+
+
+def test_a_skipped_change_claim_still_blocks_signing():
+    # Proving the real change, after skipping the other claim, replaced the review that remembered it
+    real = PSBTTestData.MULTISIG_NATIVE_SEGWIT_CHANGE
+    fake = real.replace("751780ba145dd0a289a88bdccff824116518df23cb674e810654313520eb74db", "11" * 32)
+    value = PSBT.parse(a2b_base64(PSBTTestData.MULTISIG_NATIVE_SEGWIT_1_INPUT)).inputs[0].utxo.value
+    psbt = build_psbt(PSBTTestData.MULTISIG_NATIVE_SEGWIT_1_INPUT, (fake, 100_000), (real, value - 100_000 - 500))
+    p = WasmPSBTParser(psbt.serialize(), PSBTTestData.seed, NET)
+    assert p.num_change_outputs == 2
+    assert p.verify_multisig_output(registered(), change_num=1)
+    with pytest.raises(BitwasmError):
+        p.bitwasm_review.sign()

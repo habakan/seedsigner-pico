@@ -254,7 +254,8 @@ class _Bits:
 
 
 class _Slots:
-    # The dict FountainDecoder keeps parts in, as two lists sized once: a dict rehashes as it fills
+    # The dict FountainDecoder keeps parts in, as two lists sized for the usual count: a dict rehashes as it
+    # fills. Mixed parts can outnumber the fragments, so the lists still grow past it
     def __init__(self, n):
         self.keys, self.vals, self.n = [None] * n, [None] * n, 0
 
@@ -271,6 +272,9 @@ class _Slots:
         j = self._find(k)
         if j < 0:
             j, self.n = self.n, self.n + 1
+            if j == len(self.keys):
+                self.keys.append(None)
+                self.vals.append(None)
         self.keys[j], self.vals[j] = k, v
 
     def __delitem__(self, k):
@@ -294,6 +298,9 @@ def _validate_part(self, p):
     # As upstream, with every container sized at the first part, while the heap still has holes for them
     if self.expected_part_indexes is None:
         n = p.seq_len
+        # A message_len short of the last fragment left negative lengths for the copies into the static buffer
+        if not (n - 1) * len(p.data) < p.message_len <= n * len(p.data):
+            return False
         self.expected_part_indexes = set(range(n))
         self.expected_message_len, self.expected_checksum = p.message_len, p.checksum
         self.expected_fragment_len = len(p.data)
@@ -321,11 +328,28 @@ def _reduce_mixed_by(self, p):
         if r.is_simple():
             m.pop(j)
             self.enqueue(r)
-        elif m._find(r.indexes) not in (-1, j):
+        elif not r.indexes or m._find(r.indexes) not in (-1, j):
             m.pop(j)
         else:
             m.keys[j], m.vals[j] = r.indexes, r
             j += 1
+
+
+def _process_mixed_part(self, p):
+    # As upstream, whose duplicate check compared parts with index sets and never matched: a part read twice
+    # was reduced to nothing, then XORed into every mixed part and kept as one
+    m = self.mixed_parts
+    if m._find(p.indexes) >= 0:
+        return
+    for r in self.simple_parts.values():
+        p = self.reduce_part_by_part(p, r)
+    for r in m.values():
+        p = self.reduce_part_by_part(p, r)
+    if p.is_simple():
+        self.enqueue(p)
+    elif p.indexes:
+        self.reduce_mixed_by(p)
+        m[p.indexes] = p
 
 
 def _process_simple_part(self, p):
@@ -352,11 +376,11 @@ def _process_simple_part(self, p):
     elif getattr(self, "to_static", False) and total <= PREVTX_MAX:
         # A PSBT goes out of the heap, into the signer's prevtx buffer: it stays until signing, while the
         # screens and the camera cut the heap around it. Its prevtxs are read there in place (put_prevtxs)
-        buf = _prevtx_buffer()
+        buf = memoryview(_prevtx_buffer())  # a length mismatch raises here, where a bytearray would resize
         for k, data in enumerate(self.by_index):
             n = min(fl, total - k * fl)
             buf[k * fl:k * fl + n] = memoryview(data)[:n]
-        self.result = _Pieces([memoryview(buf)[:total]], 0, total, 0)
+        self.result = _Pieces([buf[:total]], 0, total, 0)
     else:
         # The fragments themselves are the pieces: by now the heap has no hole even for a copy of one
         self.result = _Pieces(self.by_index, 0, total)
@@ -403,6 +427,7 @@ fountain_utils.choose_fragments = fountain_decoder.choose_fragments = fountain_e
 FountainDecoder.validate_part = _validate_part
 FountainDecoder.reduce_mixed_by = _reduce_mixed_by
 FountainDecoder.process_simple_part = _process_simple_part
+FountainDecoder.process_mixed_part = _process_mixed_part
 _receive_part = URDecoder.receive_part
 # Bytewords' 2.7 KB table, made while the heap is whole: made at a scan's first part, it can find no hole, and
 # URDecoder drops every part on that MemoryError, so the scan never advances
@@ -632,4 +657,52 @@ def _clearing_pending(self):
 
 controller.Controller.discard_seed = _discarding
 SeedStorage.clear_pending_seed = _clearing_pending
+
+_scan_run = ScanScreen._run
+
+
+def _scan_run_closing(self):
+    # A scan that raised left the camera holding WAMR's pool, and the next PSBT parse refused to run
+    try:
+        return _scan_run(self)
+    finally:
+        self.camera.stop_video_stream_mode()
+
+
+ScanScreen._run = _scan_run_closing
+
+from seedsigner.models.decode_qr import DecodeQRStatus, SignMessageQrDecoder
+
+_sign_message_add = SignMessageQrDecoder.add
+
+
+def _printable_message(self, segment, qr_type=QRType.SIGN_MESSAGE):
+    # The fonts hold printable ASCII and the UI's own strings, and draw nothing for any other character: such a
+    # message would show other words than the ones signed
+    status = _sign_message_add(self, segment, qr_type)
+    if status == DecodeQRStatus.COMPLETE and any(not " " <= c <= "~" for c in self.message):
+        self.complete = False
+        return DecodeQRStatus.INVALID
+    return status
+
+
+SignMessageQrDecoder.add = _printable_message
+
+_handle_exception = controller.Controller.handle_exception
+
+
+def _handling(self, e):
+    # Out of heap, the error screen can fail in turn and loop: the PSBT is let go first, and the error screen
+    # failing itself restarts the device
+    from seedsigner.views.view import UnhandledExceptionView
+    if self.back_stack and self.back_stack[-1].View_cls is UnhandledExceptionView:
+        import machine
+        machine.reset()
+    if isinstance(e, MemoryError):
+        self.psbt = self.psbt_bytes = self.psbt_parser = None
+        gc.collect()
+    return _handle_exception(self, e)
+
+
+controller.Controller.handle_exception = _handling
 _scrub_heap()  # what ran before a soft reset

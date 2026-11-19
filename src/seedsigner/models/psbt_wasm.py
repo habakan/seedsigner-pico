@@ -230,6 +230,9 @@ class WasmPSBTParser:
                 return False
             if not r.wallet_registered:
                 return False
+            # A fresh review starts as verified: any claimed change the descriptor does not derive still blocks signing
+            r.unverified_change = any(r.display["outputs"][c["output_index"]]["owner"] == P.OWNER_EXTERNAL
+                                      for c in self.change_data)
             self.bitwasm_review, self.multisig_descriptor = r, descriptor
         out = self.bitwasm_review.display["outputs"][self.change_data[change_num]["output_index"]]
         return out["owner"] != P.OWNER_EXTERNAL
