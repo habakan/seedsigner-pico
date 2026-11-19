@@ -59,6 +59,28 @@ _sd.default_value, _sd.visibility = SettingsConstants.MICROSD_TOAST_TIMER_DISABL
 from seedsigner.models.settings import Settings
 Settings.get_instance()._data[_sd.attr_name] = _sd.default_value
 
+from seedsigner.gui.components import Button
+
+_button_render = Button.render
+
+
+def _render_one_label(self):
+    # A list kept both labels of each button it passed: 47 KB of the heap after the 16 languages, against 33 KB with
+    # one. The label scrolling on core1 stays, since a thread that stops there makes the next start wait on it
+    if self.is_scrollable_text:
+        if self.is_selected:
+            self.inactive_button_label = None
+        elif self.active_button_label is not None:
+            t = self.active_button_label.scroll_thread
+            if t is None or not t.is_alive():
+                if t is not None:
+                    self.threads.remove(t)
+                self.active_button_label = None
+    _button_render(self)
+
+
+Button.render = _render_one_label
+
 # A signed PSBT's UR, and a scanned one, without the 3-4 KB copies that a fragmented heap has no hole for
 from seedsigner.helpers.ur2.fountain_encoder import FountainEncoder
 from seedsigner.helpers.ur2.ur import UR
